@@ -1,0 +1,17 @@
+[[source]]
+verify_ssl = true
+url = "https://pypi.org/simple"
+name = "pypi"
+
+[scripts]
+lint = "flake8"
+mypy = "mypy --ignore-missing-imports"
+
+[packages]
+flake8 = "*"
+mypy = "*"
+
+[requires]
+python_version = "3.7"
+
+[dev-packages]
