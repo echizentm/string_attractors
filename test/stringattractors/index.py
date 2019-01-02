@@ -13,7 +13,7 @@ class TestIndex(unittest.TestCase):
             'ケアルケアルラケアルダケアルガケアルジャ',
             '働きたくない私は働きたくない私の働きたくない気持ちを大切にして働きたくない',
         ]
-        alpha_list = [1, 2, 3, 4, 5]
+        alpha_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
         for raw_text, alpha in itertools.product(raw_text_list, alpha_list):
             text = Text(raw_text)

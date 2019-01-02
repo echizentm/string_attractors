@@ -106,22 +106,43 @@ class Index:
         ])
 
     def _get_recursive(self, position: int, level: int) -> str:
-        block_list = self._block_list_list[level]
-        coordinate_list = self._coordinate_list_list[level]
+        block_position = self._get_block_position(position, level)
 
-        block_position = bisect.bisect([block.end for block in block_list], position)
-
-        block = block_list[block_position]
-        coordinate = coordinate_list[block_position]
+        block = self._block_list_list[level][block_position]
+        block_str = self._last_block_str_list[block_position]
+        coordinate = self._coordinate_list_list[level][block_position]
         if coordinate is None:
             raise Exception('coordinate が不正です')
-        block_str = self._last_block_str_list[block_position]
 
         if level == len(self._block_list_list) - 1:
             return block_str[position - block.begin]
 
         offset = position - block.begin
         return self._get_recursive(coordinate.position + offset, level + 1)
+
+    def _get_block_position(self, position: int, level: int) -> int:
+        block_list = self._block_list_list[level]
+
+        if level == 0:
+            return bisect.bisect([block.end for block in block_list], position)
+
+        # 1つの string attractor に対して 2 * tau 個のブロックが
+        # 連続した位置に割り当てられています
+        # この連続ブロック内では end は昇順になっています
+        # 一方で連続ブロック同士は位置が重なっている可能性があります
+        # なので最初に連続ブロックの全体の end に対して search を行い
+        # その後、連続ブロック内で search するという2段階の search をします
+        cons_block_num = 2 * self.tau
+
+        block_position = bisect.bisect(
+            [block.end for i, block in enumerate(block_list) if (i + 1) % cons_block_num == 0],
+            position,
+        ) * cons_block_num
+
+        return bisect.bisect([
+            block.end
+            for block in block_list[block_position:block_position + cons_block_num]
+        ], position) + block_position
 
 
 class Block:
