@@ -1,4 +1,5 @@
 from typing import Optional, Sequence
+from .lz77 import LZ77
 
 
 class Text:
@@ -7,11 +8,14 @@ class Text:
     '''
     __slots__ = ['text', 'attractor_list']
 
-    def __init__(self, text: str, attractor_list: Sequence[int]) -> None:
+    def __init__(self, text: str, attractor_list: Optional[Sequence[int]] = None) -> None:
         '''
         :param text: 文字列
         :param attractor_list: string attractors
         '''
+        if attractor_list is None:
+            attractor_list = LZ77(text).attractor_list
+
         self.text = text
         self.attractor_list = attractor_list
 

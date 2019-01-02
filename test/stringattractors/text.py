@@ -4,6 +4,10 @@ from stringattractors.text import Text
 
 class TestText(unittest.TestCase):
     def test_marked_text(self):
+        text = Text('CDABCCDABCCA')
+        self.assertEqual(text.attractor_list, [0, 1, 2, 3, 4, 9, 10, 11])
+
+    def test_marked_text(self):
         text = Text('CDABCCDABCCA', [3, 6, 10, 11])
         self.assertEqual(text.marked_text, 'CDA[B]CC[D]ABC[C][A]')
 

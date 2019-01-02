@@ -58,23 +58,6 @@ class Index:
         '''
         return self._get_recursive(position, 0)
 
-    def _get_recursive(self, position: int, level: int) -> str:
-        block_list = self._block_list_list[level]
-        coordinate_list = self._coordinate_list_list[level]
-
-        block_position = bisect.bisect([block.end for block in block_list], position)
-
-        if level == len(self._block_list_list) - 1:
-            return self._last_block_str_list[block_position]
-
-        block = block_list[block_position]
-        coordinate = coordinate_list[block_position]
-        if coordinate is None:
-            raise Exception('coordinate が不正です')
-
-        offset = position - block.begin
-        return self._get_recursive(coordinate.position + offset, level + 1)
-
     def _make_next_block_list(
         self, text: Text, block_length: Optional[int] = None
     ) -> List['Block']:
@@ -121,6 +104,24 @@ class Index:
             text.text[position] if position >= 0 and position < len(text.text) else PAD
             for position in range(block.begin, block.end)
         ])
+
+    def _get_recursive(self, position: int, level: int) -> str:
+        block_list = self._block_list_list[level]
+        coordinate_list = self._coordinate_list_list[level]
+
+        block_position = bisect.bisect([block.end for block in block_list], position)
+
+        block = block_list[block_position]
+        coordinate = coordinate_list[block_position]
+        if coordinate is None:
+            raise Exception('coordinate が不正です')
+        block_str = self._last_block_str_list[block_position]
+
+        if level == len(self._block_list_list) - 1:
+            return block_str[position - block.begin]
+
+        offset = position - block.begin
+        return self._get_recursive(coordinate.position + offset, level + 1)
 
 
 class Block:
