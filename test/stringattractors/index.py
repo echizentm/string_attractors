@@ -1,4 +1,3 @@
-import itertools
 import unittest
 from stringattractors.index import Index
 from stringattractors.text import Text
@@ -8,16 +7,16 @@ class TestIndex(unittest.TestCase):
     def test_get(self):
         raw_text_list = [
             'CDABCCDABCCA',
+            'aaaaaaaabbbbbbbb',
             'abracadabra',
             'みるみるミルキィ',
             'ケアルケアルラケアルダケアルガケアルジャ',
             '働きたくない私は働きたくない私の働きたくない気持ちを大切にして働きたくない',
         ]
-        alpha_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-        for raw_text, alpha in itertools.product(raw_text_list, alpha_list):
+        for raw_text in raw_text_list:
             text = Text(raw_text)
-            index = Index(alpha=alpha)
+            index = Index()
 
             index.make(text)
             for position, ch in enumerate(text.text):

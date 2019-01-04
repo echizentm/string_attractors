@@ -2,6 +2,8 @@ import math
 from typing import Dict, List, Optional, Sequence, Tuple
 from .text import Coordinate, Text
 
+# テキストからはみ出た部分を埋める文字
+# テキストに出現する文字と同じものでも問題ない
 PAD = '*'
 
 
@@ -11,30 +13,41 @@ class Index:
     任意の位置の文字を取得可能なインデックス
     '''
     __slots__ = [
-        'alpha',
         'tau',
+        '_alpha',
         '_attractor_map',
         '_block_length_list',
         '_coordinate_list_list',
         '_last_block_str_list',
     ]
 
-    def __init__(self, alpha: int = 1, tau: int = 2) -> None:
+    def __init__(self, tau: int = 2) -> None:
         '''
-        :param alpha: ブロックがこのサイズになったらまるごと保存する
         :param tau: ブロックをいくつに分割するかを表すパラメータ
         '''
-        if alpha < 1:
-            raise Exception('alpha は1以上の整数を与えてください')
         if tau < 2:
             raise Exception('tau は2以上の整数を与えてください')
 
-        self.alpha = alpha
         self.tau = tau
+        self._alpha: Optional[int] = None
         self._attractor_map: Dict[int, int] = {}
         self._block_length_list: List[int] = []
         self._coordinate_list_list: List[List[Optional[Coordinate]]] = []
         self._last_block_str_list: List[str] = []
+
+    @property
+    def alpha(self) -> int:
+        '''
+        :return: ブロックがこの長さになったらまるごと保存する
+        '''
+        if self._alpha is None:
+            if len(self._block_length_list) == 0:
+                raise Exception(
+                    'level 0 の階層のブロック長がわからないと alpha を自動で決定できません'
+                )
+            self._alpha = math.ceil(math.log(self._block_length_list[0], self.tau))
+
+        return self._alpha
 
     def make(self, text: Text) -> None:
         '''
