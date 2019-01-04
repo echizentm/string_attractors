@@ -7,7 +7,7 @@ class TestIndex(unittest.TestCase):
     def test_get(self):
         raw_text_list = [
             'CDABCCDABCCA',
-            'aaaaaaaabbbbbbbb',
+            'aaaaaaaa********bbbbbbbb',
             'abracadabra',
             'みるみるミルキィ',
             'ケアルケアルラケアルダケアルガケアルジャ',
