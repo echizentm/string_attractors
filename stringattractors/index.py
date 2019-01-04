@@ -1,6 +1,5 @@
-import bisect
 import math
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 from .text import Coordinate, Text
 
 PAD = '*'
@@ -12,8 +11,12 @@ class Index:
     任意の位置の文字を取得可能なインデックス
     '''
     __slots__ = [
-        'alpha', 'tau',
-        '_block_list_list', '_coordinate_list_list', '_last_block_str_list',
+        'alpha',
+        'tau',
+        '_attractor_map',
+        '_block_length_list',
+        '_coordinate_list_list',
+        '_last_block_str_list',
     ]
 
     def __init__(self, alpha: int = 1, tau: int = 2) -> None:
@@ -28,7 +31,8 @@ class Index:
 
         self.alpha = alpha
         self.tau = tau
-        self._block_list_list: List[List['Block']] = []
+        self._attractor_map: Dict[int, int] = {}
+        self._block_length_list: List[int] = []
         self._coordinate_list_list: List[List[Optional[Coordinate]]] = []
         self._last_block_str_list: List[str] = []
 
@@ -38,6 +42,11 @@ class Index:
 
         :param text: string attractors つき文字列
         '''
+        self._attractor_map = {
+            attractor: i
+            for i, attractor in enumerate(text.attractor_list)
+        }
+
         block_length = None
         while (block_length is None) or (block_length >= 2 * self.alpha):
             block_list = self._make_next_block_list(text, block_length)
@@ -47,7 +56,7 @@ class Index:
             coordinate_list = self._make_coordinate_list(text, block_list)
             block_str_list = self._make_block_str_list(text, block_list)
 
-            self._block_list_list.append(block_list)
+            self._block_length_list.append(block_length)
             self._coordinate_list_list.append(coordinate_list)
             self._last_block_str_list = block_str_list
 
@@ -56,7 +65,7 @@ class Index:
         :param position: 取得する位置
         :return: 指定した位置にある文字
         '''
-        return self._get_recursive(position, 0)
+        return self._get_recursive(position, 0, None)
 
     def _make_next_block_list(
         self, text: Text, block_length: Optional[int] = None
@@ -105,44 +114,46 @@ class Index:
             for position in range(block.begin, block.end)
         ])
 
-    def _get_recursive(self, position: int, level: int) -> str:
-        block_position = self._get_block_position(position, level)
+    def _get_recursive(
+        self, position: int, level: int, attractor: Optional[int]
+    ) -> str:
+        block_position, offset = self._get_block_position_and_offset(
+            position, level, attractor
+        )
 
-        block = self._block_list_list[level][block_position]
         block_str = self._last_block_str_list[block_position]
         coordinate = self._coordinate_list_list[level][block_position]
         if coordinate is None:
             raise Exception('coordinate が不正です')
 
-        if level == len(self._block_list_list) - 1:
-            return block_str[position - block.begin]
+        if level == len(self._block_length_list) - 1:
+            return block_str[offset]
 
-        offset = position - block.begin
-        return self._get_recursive(coordinate.position + offset, level + 1)
+        return self._get_recursive(
+            coordinate.position + offset,
+            level + 1,
+            coordinate.attractor,
+        )
 
-    def _get_block_position(self, position: int, level: int) -> int:
-        block_list = self._block_list_list[level]
+    def _get_block_position_and_offset(
+        self, position: int, level: int, attractor: Optional[int]
+    ) -> Tuple[int, int]:
+        '''
+        position が含まれるブロックの位置と
+        ブロック内での position のオフセットを取得する
+        '''
+        block_length = self._block_length_list[level]
 
         if level == 0:
-            return bisect.bisect([block.end for block in block_list], position)
+            return divmod(position, block_length)
 
-        # 1つの string attractor に対して 2 * tau 個のブロックが
-        # 連続した位置に割り当てられています
-        # この連続ブロック内では end は昇順になっています
-        # 一方で連続ブロック同士は位置が重なっている可能性があります
-        # なので最初に連続ブロックの全体の end に対して search を行い
-        # その後、連続ブロック内で search するという2段階の search をします
-        cons_block_num = 2 * self.tau
+        if attractor is None:
+            raise Exception('level 0 以外の階層では attractor が指定されている必要があります')
 
-        block_position = bisect.bisect(
-            [block.end for i, block in enumerate(block_list) if (i + 1) % cons_block_num == 0],
-            position,
-        ) * cons_block_num
-
-        return bisect.bisect([
-            block.end
-            for block in block_list[block_position:block_position + cons_block_num]
-        ], position) + block_position
+        attractor_block_position = self._attractor_map[attractor] * self.tau * 2 + self.tau
+        block_position_offset, offset = divmod(position - attractor, block_length)
+        block_position = attractor_block_position + block_position_offset
+        return block_position, offset
 
 
 class Block:

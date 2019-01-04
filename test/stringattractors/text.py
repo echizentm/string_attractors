@@ -3,7 +3,7 @@ from stringattractors.text import Text
 
 
 class TestText(unittest.TestCase):
-    def test_marked_text(self):
+    def test_attractor_list(self):
         text = Text('CDABCCDABCCA')
         self.assertEqual(text.attractor_list, [0, 1, 2, 3, 4, 9, 10, 11])
 
